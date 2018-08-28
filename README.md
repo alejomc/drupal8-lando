@@ -1,4 +1,4 @@
-# LANDO TEN - TNT Dejavu #
+# LANDO Drupal 8 #
 
 ### What is Lando? ###
 

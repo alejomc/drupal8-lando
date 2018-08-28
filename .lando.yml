@@ -1,0 +1,78 @@
+name: mydrupalsite
+recipe: drupal8
+# Configure the Drupal8 recipe
+proxy:
+  pma:
+    - pma.mydrupalsite.lndo.site
+config:
+  via: nginx
+  php: '7.2'
+  #database: mariadb:10.1
+  drush: composer
+  #xdebug: true
+  webroot: docroot
+  conf:
+    php: config_lando/php.ini
+    server: config_lando/drupal8.conf
+services:
+  appserver:
+    ssl: false
+    run_as_root:
+      - apt-get update -y
+      - apt-get install vim -y
+      - apt-get install nano -y
+  node-cli:
+    type: node:6.10
+    globals:
+      gulp-cli: "latest"
+      sass: "latest"
+#    run:
+#      - "cd $LANDO_MOUNT & echo 'Compile Theme SASS files'"
+#      - "cd $LANDO_MOUNT/docroot/themes/custom/THEMENAME && gulp"
+  pma:
+    type: phpmyadmin
+    hosts:
+      - database
+  cache:
+    type: memcached:1.4
+    mem: 128
+    portforward: 11222
+  search:
+    type: elasticsearch:5.4
+    portforward: 19200
+tooling:
+  vim:
+    service: appserver
+  npm:
+    service: node-cli
+  node:
+    service: node-cli
+  gulp:
+    service: node-cli
+  sass:
+    service: node-cli
+  cms-update:
+    service: appserver
+    description: "Build composer dependencies, import config and run database updates"
+    cmd: echo Running update commands ...
+  cms-build-settings:
+    service: appserver
+    description: "Build CMS settings files"
+    cmd: echo Build CMS settings files ...
+events:
+  # Clear caches after a database import
+  post-db-import:
+    appserver: cd $LANDO_WEBROOT && drush cr
+  post-cms-update:
+    appserver: |
+      cd $LANDO_MOUNT && composer install
+      cd $LANDO_WEBROOT
+      drush updb -y --entity-updates
+      drush cim -y
+      drush cr
+
+
+
+
+
+
